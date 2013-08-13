@@ -1,0 +1,7 @@
+*.swp
+target
+conflate-local.yml
+conflate.yml
+/.settings
+/.classpath
+/.project

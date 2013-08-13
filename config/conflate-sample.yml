@@ -1,0 +1,6 @@
+metadata:
+    configFile: config/metadata.csv
+riak:
+    client: "pb"
+    host: localhost
+    port: 10017
