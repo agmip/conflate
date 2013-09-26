@@ -5,3 +5,5 @@ conflate.yml
 /.settings
 /.classpath
 /.project
+
+/start
