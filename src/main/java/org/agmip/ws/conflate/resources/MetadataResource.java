@@ -1,10 +1,14 @@
 package org.agmip.ws.conflate.resources;
 
+import java.util.Set;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+
+import org.agmip.ace.util.MetadataFilter;
 
 import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakException;
@@ -25,6 +29,26 @@ public class MetadataResource {
     
     public MetadataResource(IRiakClient client) {
         this.client = client;
+    }
+    
+    @GET
+    @Path("display")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String loadMetadata() {
+    	StringBuilder sb = new StringBuilder();
+    	sb.append("Metadata:\n=========\n\n");
+    	Set<String> metadata = MetadataFilter.INSTANCE.getMetadata();
+    	for(String mde : metadata) {
+    		sb.append(mde);
+    		sb.append("\n");
+    	}
+    	sb.append("\nIndexed Metadata\n================\n\n");
+    	Set<String> indexmd = MetadataFilter.INSTANCE.getIndexedMetadata();
+    	for(String mde : indexmd) {
+    		sb.append(mde);
+    		sb.append("\n");
+    	}
+    	return sb.toString();
     }
 
     @GET
