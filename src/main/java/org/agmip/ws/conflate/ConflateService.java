@@ -3,6 +3,7 @@ package org.agmip.ws.conflate;
 import org.agmip.ws.conflate.config.RiakConfig;
 import org.agmip.ws.conflate.health.RiakHealthCheck;
 import org.agmip.ws.conflate.managers.CacheManager;
+import org.agmip.ws.conflate.managers.ConcurrencyManager;
 import org.agmip.ws.conflate.managers.RiakManager;
 import org.agmip.ws.conflate.resources.CacheResource;
 import org.agmip.ws.conflate.resources.DatasetResource;
@@ -29,13 +30,14 @@ public class ConflateService extends Service<ConflateConfig> {
     @Override
     public void run(ConflateConfig config, Environment env) {
         final RiakConfig riak = config.getRiakConfig();
-        
 
         RiakManager riakConnection = new RiakManager(riak);
+        ConcurrencyManager executors = new ConcurrencyManager();
+        env.manage(executors);
         env.manage(riakConnection);
         env.manage(new CacheManager(riakConnection.getClient()));
         env.addHealthCheck(new RiakHealthCheck(riakConnection.getClient()));
-        env.addResource(new DatasetResource(riakConnection.getClient()));
+        env.addResource(new DatasetResource(riakConnection.getClient(), executors));
         env.addResource(new QueryResource(riakConnection.getClient()));
         env.addResource(new CacheResource(riakConnection.getClient()));
         env.addResource(new MetadataResource(riakConnection.getClient()));
