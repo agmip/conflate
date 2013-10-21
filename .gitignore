@@ -5,5 +5,7 @@ conflate.yml
 /.settings
 /.classpath
 /.project
-
+*.log
 /start
+/.idea
+*.iml
