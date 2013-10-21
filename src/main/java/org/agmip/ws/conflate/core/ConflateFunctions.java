@@ -5,11 +5,15 @@ public class ConflateFunctions {
     }
 
     public static String JSONPWrap(String callback, String data) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(callback);
-        sb.append("(");
-        sb.append(data);
-        sb.append(");");
-        return sb.toString();
+        if (callback == null) {
+            return data;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            sb.append(callback);
+            sb.append("(");
+            sb.append(data);
+            sb.append(");");
+            return sb.toString();
+        }
     }
 }

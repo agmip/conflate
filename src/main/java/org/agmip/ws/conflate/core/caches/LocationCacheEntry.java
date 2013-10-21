@@ -19,7 +19,7 @@ public class LocationCacheEntry {
 
     public LocationCacheEntry(GeoPoint point) {
         this.point = point;
-        this.count = 0;
+        this.count = 1;
     }
 
     public LocationCacheEntry(String geohash, int count) {
@@ -29,7 +29,7 @@ public class LocationCacheEntry {
 
     public LocationCacheEntry(String geohash) {
         this.point = new GeoPoint(geohash);
-        this.count = 0;
+        this.count = 1;
     }
 
     public LocationCacheEntry(String lat, String lng, int count) {
@@ -39,18 +39,9 @@ public class LocationCacheEntry {
 
     public LocationCacheEntry(String lat, String lng) {
         this.point = new GeoPoint(lat, lng);
-        this.count = 0;
+        this.count = 1;
     }
 
-    public LocationCacheEntry(double lat, double lng, int count) {
-        this.point = new GeoPoint(lat, lng);
-        this.count = count;
-    }
-
-    public LocationCacheEntry(double lat, double lng) {
-        this.point = new GeoPoint(lat, lng);
-        this.count = 0;
-    }
 
     public GeoPoint getPoint() {
         return this.point;
@@ -66,6 +57,10 @@ public class LocationCacheEntry {
 
     public void decrementCount() {
         this.count--;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
     }
 
     @Override

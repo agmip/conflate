@@ -13,6 +13,7 @@ import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.IRiakObject;
 import com.basho.riak.client.RiakException;
 import com.basho.riak.client.bucket.Bucket;
+import org.agmip.ws.conflate.core.ConflateFunctions;
 import org.agmip.ws.conflate.core.caches.CropCache;
 
 @Path("/ace/1/cache/")
@@ -64,8 +65,15 @@ public class CacheResource {
     @GET
     @Path("location")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getLocationCache(@QueryParam("callback") String jsonp) {
-        return "{}";
+    public String getLocationCache(@QueryParam("callback") String jsonp) throws RiakException {
+        Bucket locationCache = this.client.fetchBucket("ace_cache_location").execute();
+        IRiakObject liveCache = locationCache.fetch("main").execute();
+
+        if (liveCache != null) {
+            return ConflateFunctions.JSONPWrap(jsonp, liveCache.getValueAsString());
+        } else {
+            return ConflateFunctions.JSONPWrap(jsonp, "{}");
+        }
     }
 
     @GET

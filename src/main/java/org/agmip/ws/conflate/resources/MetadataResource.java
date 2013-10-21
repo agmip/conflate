@@ -22,7 +22,7 @@ import com.yammer.metrics.annotation.Timed;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
-@Path("/metadata/")
+@Path("/ace/1/metadata/")
 public class MetadataResource {
     //private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
     private IRiakClient client;
