@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import com.sun.jersey.api.client.Client;
 import org.agmip.ace.AceDataset;
 import org.agmip.ace.AceExperiment;
 import org.agmip.ace.AceSoil;
@@ -16,6 +17,8 @@ import org.agmip.ace.util.AceFunctions;
 import org.agmip.ace.util.GeoPoint;
 import org.agmip.ace.util.JsonFactoryImpl;
 import org.agmip.ace.util.MetadataFilter;
+import org.agmip.ws.conflate.api.NaviPoint;
+import org.agmip.ws.conflate.config.ExternalServices;
 import org.agmip.ws.conflate.core.caches.CropCache;
 import org.agmip.ws.conflate.core.caches.LocationCacheEntry;
 import org.slf4j.Logger;
@@ -28,6 +31,8 @@ import com.basho.riak.client.builders.RiakObjectBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javax.ws.rs.core.MediaType;
+
 public class ProcessNewDatasetController implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessNewDatasetController.class);
 	private static final ObjectMapper mapper = new ObjectMapper();
@@ -35,12 +40,14 @@ public class ProcessNewDatasetController implements Runnable {
 	AceDataset        dataset;
 	ExecutorService   ex;
 	IRiakClient       riak;
+    Client            httpClient;
 	
-	public ProcessNewDatasetController(String datasetId, AceDataset dataset, ExecutorService ex, IRiakClient riak) {
-		this.datasetId = datasetId;
-		this.dataset   = dataset;
-		this.ex        = ex;
-		this.riak      = riak;
+	public ProcessNewDatasetController(String datasetId, AceDataset dataset, ExecutorService ex, IRiakClient riak, Client httpClient) {
+		this.datasetId  = datasetId;
+		this.dataset    = dataset;
+		this.ex         = ex;
+		this.riak       = riak;
+        this.httpClient = httpClient;
 	}
 		
 	@Override
@@ -59,11 +66,37 @@ public class ProcessNewDatasetController implements Runnable {
 	}
 	
 	private void calculateDatasetFields() throws IOException {
-		for(AceExperiment e: this.dataset.getExperiments()) {
-			GeoPoint point = new GeoPoint(e.getValue("fl_lat"), e.getValue("fl_long"));
-			e.update("~fl_geohash~", point.getGeoHash(), true);
-		}
-	}
+        // Update Country information
+        Map<String, NaviPoint> points = new HashMap<>();
+        LOG.info("Entering AE loop");
+        for(AceExperiment e: this.dataset.getExperiments()) {
+            if(ExternalServices.INSTANCE.getNaviEnabled()) {
+                // Format for call: {"lat":"<fl_lat>", "lng":"<fl_long>"}
+                String ll = generateNaviLookup(e.getValue("fl_lat"), e.getValue("fl_long"));
+                LOG.info("Looking up point: {}", ll);
+                NaviPoint point;
+                if (! points.containsKey(ll)) {
+                    point = httpClient.resource(ExternalServices.INSTANCE.getNaviEndpoint()+"point").type(MediaType.APPLICATION_JSON_TYPE).accept(MediaType.APPLICATION_JSON_TYPE).post(NaviPoint.class, ll);
+                    if (point.getError() != null) {
+                        //Houston, we have a problem
+                        LOG.error("Error with request: {}", point.getError());
+                    } else {
+                        points.put(ll, point);
+                    }
+                } else {
+                    point = points.get(ll);
+                }
+                e.update("~fl_geohash~", point.getGeohash(), true);
+                e.update("fl_loc_1", point.getCountryISO(), true);
+                e.update("fl_loc_2", point.getAdm1(), true);
+                e.update("fl_loc_3", point.getAdm2(), true);
+            } else {
+                // TODO: Process the geohash still if navi is unreachable.
+                LOG.info("Not accessing NAVI due to settings.");
+            }
+
+        }
+    }
 	
 	private class StoreMetadataProcess implements Runnable {
 		@Override
@@ -92,6 +125,7 @@ public class ProcessNewDatasetController implements Runnable {
 						g.writeStringField("~fl_geohash~", geohash);
 						builder.addIndex("fl_geohash", geohash);
 					}
+                    builder.addIndex("created_at", System.currentTimeMillis());
 					g.writeEndObject();
 					g.close();
 					builder.withValue(out.toByteArray());
@@ -193,5 +227,16 @@ public class ProcessNewDatasetController implements Runnable {
 			}
 		}
 	}
+
+    // Utility Methods
+    private static String generateNaviLookup(String lat, String lng) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"lat\":\"");
+        sb.append(lat);
+        sb.append("\",\"lng\":\"");
+        sb.append(lng);
+        sb.append("\"}");
+        return sb.toString();
+    }
 }
 

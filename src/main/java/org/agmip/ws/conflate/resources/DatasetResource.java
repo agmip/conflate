@@ -1,23 +1,20 @@
 package org.agmip.ws.conflate.resources;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.sun.jersey.api.client.Client;
 import org.agmip.ace.AceDataset;
 import org.agmip.ace.AceExperiment;
 import org.agmip.ace.io.AceParser;
@@ -36,10 +33,12 @@ public class DatasetResource {
 	private IRiakClient client;
 	//private static final ObjectMapper mapper = new ObjectMapper();
 	private ExecutorService datasetService;
+    private Client httpClient;
 
-	public DatasetResource(IRiakClient riak, ConcurrencyManager executors)  {
+	public DatasetResource(IRiakClient riak, ConcurrencyManager executors, Client httpClient)  {
 		this.client = riak;
 		this.datasetService = executors.getDatasetExecutor();
+        this.httpClient = httpClient;
 	}
 
 	@POST
@@ -51,21 +50,9 @@ public class DatasetResource {
 		try {
 			String randomId = UUID.randomUUID().toString();
 			AceDataset dataset = AceParser.parseACEB(stream);
-			//long timestamp = System.currentTimeMillis();
-			// Fire off the threaded controller (does not need to report back to this one)
-			//addCalculatedFields(dataset);
-			//storeMetadata(dataset);
-			//storeData(dataset);
-			//updateCaches(dataset, timestamp);
-			// Fire off store event to Riak
-			// key: uuid, value: {uud, path, timestamp, client-server-id}
-			// UploadRef upload = new UploadRef(randomId, tmpFile.toString(), timestamp);
-			// upload = null;
-			//return the UUID to the client, for caching
-			this.datasetService.execute(new ProcessNewDatasetController(randomId, dataset, this.datasetService, this.client));
+			this.datasetService.execute(new ProcessNewDatasetController(randomId, dataset, this.datasetService, this.client, this.httpClient));
 
 			return Response.ok("{\"reqid\":\""+randomId+"\"").build();
-			//return "{\"reqid\":\""+randomId+"\"}";
 
 		} catch (IOException ex) {
 			LOG.error("500 Error: {}", ex.getMessage());
@@ -92,12 +79,14 @@ public class DatasetResource {
 
 	}
 	
-	@GET
+	@POST
 	@Path("/nuke")
 	public String destroyDatabase() throws Exception {
 		wipeDatabase();
 		return "Eliminated...";
 	}
+	
+	// Implementation methods
 	
 	private void removeMetadata(AceDataset dataset) throws Exception {
 		Bucket metadataBucket = this.client.fetchBucket("metadata").execute();
