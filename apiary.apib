@@ -5,5 +5,30 @@ The AgMIP ACE Database API is used to provide a standard interface to a Riak ins
 ---
 
 --
-Uploading
+Uploading Data
+The process for uploading data is as follows.
+
+1. Request a upload token (with files)
+2. Request additional information to report to user
+3. Verify and update information
 --
+
+Upload files and receive and upload token
+POST /ace/1/dataset
+> Content-Type: multipart/form-data; boundary="------abc123"
+> X-AgmipAuthToken: user_auth_token
+> Accept: application/json
+------abc123
+Content-Disposition: form-data; name="aceb"; filename="data.aceb"
+Content-Type: application/gzip
+file_contents
+------abc123
+Content-Disposition: form-data; name="dome"; filename="overlay.dome"
+Content-Type: application/gzip
+file_contents
+------abc123
+Content-Disposition: form-data; name="acmo"; filename="outputs.csv"
+Content-Type: text/csv
+file_contents
+------abc123
+< 200
