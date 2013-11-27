@@ -1,34 +1,63 @@
---- AgMIP ACE Database API ---
+Format: 1A
 
----
-The AgMIP ACE Database API is used to provide a standard interface to a Riak instance and upload AgMIP Data.
----
+# AgMIP ACE Database API
+The AgMIP ACE Database API is used to provide a standard interface to a Riak instance. This interface is used to:
 
---
-Uploading Data
-The process for uploading data is as follows.
+* Upload AgMIP ACE data (inputs, ouputs, and overlays).
+* Search AgMIP ACE data (inputs, outputs)
+* Download AgMIP ACE data (inputs, outputs, and overlays).
 
-1. Request a upload token (with files)
-2. Request additional information to report to user
-3. Verify and update information
---
+# Group Uploading Data
+The process for uploading data is as follows:
 
-Upload files and receive and upload token
-POST /ace/1/dataset
-> Content-Type: multipart/form-data; boundary="------abc123"
-> X-AgmipAuthToken: user_auth_token
-> Accept: application/json
-------abc123
-Content-Disposition: form-data; name="aceb"; filename="data.aceb"
-Content-Type: application/gzip
-file_contents
-------abc123
-Content-Disposition: form-data; name="dome"; filename="overlay.dome"
-Content-Type: application/gzip
-file_contents
-------abc123
-Content-Disposition: form-data; name="acmo"; filename="outputs.csv"
-Content-Type: text/csv
-file_contents
-------abc123
-< 200
+1. Send files and request an upload token.
+2. Request additional information (missing suggested fields, general metadata)
+3. Verify and update the upload.
+
+## Initial Upload [/ace/1/dataset]
+Send file(s) to server for processing. Any combination of the files can be uploaded, but at least
+one of the files needs to be present. 
+### [POST]
+#### Parameters
+
+* **aceb** - *optional* - ACE Binary File
+* **dome** - *optional* - DOME Binary File
+* **acmo** - *optional* - ACMO CSV File
++ Request
+
+
+    + Header
+            
+            Content-type: multipart/form-data; boundary="---abc123"
+            X-AgmipAuthToken: your_token
+            
+    + Body
+    
+            ---abc123
+            Content-Disposition: form-data; name="aceb"; filename="data.aceb"
+            Content-Type: application/gzip
+            ... file data here ...
+            ---abc123
+            Content-Disposition: form-data; name="dome"; filename="overlay.dome"
+            Content-Type: application/gzip
+            ... file data here ...
+            ---abc123
+            Content-Disposition: form-data; name="acmo"; filename="outputs.csv"
+            Content-Type: text/plain
+            ... file data here ...
+            ---abc123
+
++ Response 202 (application/json)
+
+        {"upload_token": token}
+        
++ Response 400 (application/json)
+
+        {"error": "No files uploaded."}
+
++ Response 401 (application/json)
+
+        {"error": "No user authentication token provided."}
+
+
+        
