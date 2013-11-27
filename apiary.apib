@@ -14,15 +14,22 @@ The process for uploading data is as follows:
 2. Request additional information (missing suggested fields, general metadata)
 3. Verify and update the upload.
 
-## Initial Upload [/ace/1/dataset]
+## Upload Token Resource [/ace/1/dataset]
 Send file(s) to server for processing. Any combination of the files can be uploaded, but at least
-one of the files needs to be present. 
+one of the files needs to be present. If processing is successful, an upload token is returned which 
+can be used to track and update this upload.
+
 ### Request Upload Token [POST]
+The upload token provided by this resource can be polled via `GET` request to receive it's current
+state, or can be sent a `POST` request and be used to update the underlying data prior to storage.
+
 #### Parameters
 
 * **aceb** - *optional* - ACE Binary File
 * **dome** - *optional* - DOME Binary File
 * **acmo** - *optional* - ACMO CSV File
+
+
 + Request
 
 
