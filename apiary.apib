@@ -32,11 +32,10 @@ state, or can be sent a `POST` request and be used to update the underlying data
 
 + Request
 
-
     + Header
             
             Content-type: multipart/form-data; boundary="---abc123"
-            X-AgmipAuthToken: your_token
+            X-AgmipAuthToken: user_token
             
     + Body
     
@@ -66,5 +65,110 @@ state, or can be sent a `POST` request and be used to update the underlying data
 
         {"error": "No user authentication token provided."}
 
+## Upload Resource [/ace/1/dataset/{token}]
+Once a upload token is received, it can be used to check the current status of the upload, query
+for missing suggested fields, update those fields and perform final submission of the upload to the
+database.
 
+### Check Upload State [GET]
++ Request
+
+    + Header
+            
+            X-AgmipAuthToken: user_token
+    
++ Response 200 (application/json)
+
+        {}
+
++ Response 201 (application/json)
+
+        {"state":"submitted"}
+
++ Response 202 (application/json)
+
+        {"state":"processing"}
+
++ Response 400 (application/json)
+
+        {"state":"failed", "error": human_readable_error, "details": [reasons_for_failing]}
+
++ Response 401 (application/json)
+
+        {"state":"unknown", "error":"No user authentication token provided"}
+
++ Response 403 (application/json)
+
+        {"state":"unknown", "error":"User not authorized to see this upload"}
+
++ Response 404 (application/json)
+
+        {"state":"unknown", "error":"Invalid upload token"}
         
++ Response 500 (application/json)
+
+        {"state":"unknown", "error":"A server error has occurred."}
+
+### Update Upload Data [POST]
++ Request (application/json)
+    
+    + Header
+    
+            X-AgmipAuthToken: user_token
+
+    + Body
+    
+            {}
+
++ Response 202 (application/json)
+    
+        {"state":"processing"}
+
++ Response 400 (application/json)
+    
+        {"error":human_readable_error}
+
++ Response 401 (application/json)
+
+        {"error":"No user authentication token provided"}
+
++ Response 403 (application/json)
+        
+        {"error":"User not authorized to update this upload"}
+
++ Response 404 (application/json)
+
+        {"error":"Invalid upload token"}
+
++ Response 500 (application/json)
+
+        {"error":"A server error has occurred."}
+        
+### Cancel Upload [DELETE]
++ Request
+    
+    + Header
+    
+            X-AgmipAuthToken: user_token
+
+    + Body
+        
+            
+
++ Response 204
+
++ Response 401 (application/json)
+
+        {"error":"No user authentication token provided"}
+
++ Response 403 (application/json)
+    
+        {"error":"User not authorized to update this upload"}
+
++ Response 404 (application/json)
+
+        {"error":"Invalid upload token"}
+        
++ Response 500 (application/json)
+
+        {"error":"A server error has occurred."}
